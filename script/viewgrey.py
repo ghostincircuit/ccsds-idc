@@ -87,6 +87,7 @@ if __name__ == '__main__':
             img[i][j] = float(pixel)/full    
 
     a = plt.figure()
+    a.suptitle(file_name)
     plt.imshow(img, cmap='gray')
     a.show()
     sys.stderr.write("press any key to quit\n")
