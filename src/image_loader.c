@@ -9,10 +9,12 @@ const char err_msg[] = "invalid file_name: %s\nfile name format should be:\n wid
 
 static int parse_int(const char **pp)
 {
-        assert(p);
+
         const char *p0 = *pp;
         int sum = 0;
         int ch;
+        assert(pp);
+        assert(p0);
         while(*p0) {
                 ch = *p0 - '0';
                 if (0 <= ch && ch <= 9) {
@@ -171,9 +173,9 @@ void image_loader_free(struct image *img)
         free(img);
 }
 
-#define _UNIT_TEST_
+//#define _UNIT_TEST_IMAGE_LOADER_
 
-#ifdef _UNIT_TEST_
+#ifdef _UNIT_TEST_IMAGE_LOADER_
 
 int main()
 {
@@ -182,4 +184,4 @@ int main()
         return 0;
 }
 
-#endif//_UNIT_TEST_
+#endif//_UNIT_TEST_IMAGE_LOADER_
