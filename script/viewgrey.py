@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import sys
 import skimage
 import skimage.io
@@ -88,7 +89,7 @@ if __name__ == '__main__':
 
     a = plt.figure()
     a.suptitle(file_name)
-    plt.imshow(img, cmap='gray')
+    plt.imshow(img, cmap='gray', interpolation='nearest')
     a.show()
     sys.stderr.write("press any key to quit\n")
     raw_input()

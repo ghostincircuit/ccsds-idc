@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include "image_loader.h"
 
@@ -8,6 +9,7 @@ const char err_msg[] = "invalid file_name: %s\nfile name format should be:\n wid
 
 static int parse_int(const char **pp)
 {
+        assert(p);
         const char *p0 = *pp;
         int sum = 0;
         int ch;
@@ -17,7 +19,8 @@ static int parse_int(const char **pp)
                         sum *= 10;
                         sum += ch;
                         p0++;
-                }
+                } else
+                        break;
         }
         *pp = p0;
         return sum;
@@ -25,17 +28,18 @@ static int parse_int(const char **pp)
 
 struct image *image_loader_create(const char file_name[])
 {
-
+        assert(file_name);
         struct image *img = malloc(sizeof(struct image));
-        FIle *fp;
+        FILE *fp;
         const char *p0;
         int sum;
 
-        if (!ret) {
+        if (!img) {
                 perror("error while allocating memory");
                 abort();
         }
         img->data = NULL;
+        img->cell_size = 4;
 
         fp = fopen(file_name, "r");
         if (!fp) {
@@ -43,13 +47,15 @@ struct image *image_loader_create(const char file_name[])
                 abort();
         }
 
-        p0 = file_name;
+        p0 = file_name + strlen(file_name) - 1;
+        while (*p0 != '/')
+                p0--;
+        p0++;
 
         //find width
         sum = parse_int(&p0);
         if (*p0 != '_' || sum == 0) {
-                fprintf(err_msg,
-                        file_name, stderr);
+                fprintf(stderr, err_msg, file_name);
                 abort();
         }
         p0++;
@@ -58,8 +64,7 @@ struct image *image_loader_create(const char file_name[])
         //find height
         sum = parse_int(&p0);
         if (*p0 != '_' || sum == 0) {
-                fprintf(err_msg,
-                        file_name, stderr);
+                fprintf(stderr, err_msg, file_name);
                 abort();
         }
         p0++;
@@ -68,8 +73,7 @@ struct image *image_loader_create(const char file_name[])
         //find bits
         sum = parse_int(&p0);
         if (*p0 != '_' || sum == 0) {
-                fprintf(err_msg,
-                        file_name, stderr);
+                fprintf(stderr, err_msg, file_name);
                 abort();
         }
         p0++;
@@ -78,8 +82,7 @@ struct image *image_loader_create(const char file_name[])
         //find bpp
         sum = parse_int(&p0);
         if (*p0 != '_' || sum == 0) {
-                fprintf(err_msg,
-                        file_name, stderr);
+                fprintf(stderr, err_msg, file_name);
                 abort();
         }
         p0++;
@@ -89,8 +92,7 @@ struct image *image_loader_create(const char file_name[])
         if (*p0 == 'b' || *p0 == 'l') {
                 img->endian = *p0;
         } else {
-                fprintf(err_msg,
-                        file_name, stderr);
+                fprintf(stderr, err_msg, file_name);
                 abort();                
         }
         //file_name
@@ -104,21 +106,63 @@ struct image *image_loader_create(const char file_name[])
 
         //allocate memoroy
         u32 total_size = img->bpp * img->height * img->width;
-        img->data = malloc(total_size);
+        u32 buffer_size = sizeof(img->cell_size) * img->height * img->width;
+        img->data = malloc(buffer_size);
         if (!img->data) {
                 perror("error while allocating memory");
                 abort();
         }
         
-        //read in
-        u32 unit = (bits+7)/8;//bytes per pixel
-        size_t done = fread(img->data, total_size, 1, fp);
-        if (done != unit) {
-                perror("error while reading image contents, actual size do not match file name description");
+        //determine size
+        fseek(fp, 0, SEEK_END);
+        u32 file_size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);
+        if (file_size < total_size) {
+                fprintf(stderr, "file size smaller than described by file name\n");
                 abort();
+        }
+
+        //read in
+        u32 i;
+        u32 pixel;
+
+        u32 *buffer = img->data;
+        if (img->endian == 'l') {
+                for (i = 0; i < img->height * img->width; i++) {
+                        u32 j;
+                        u8 *p = (u8 *)&pixel;
+                        pixel = 0;
+                        for (j = 0; j < img->bpp; j++) {
+                                fread(p+j, 1, 1, fp);
+                                buffer[i] = pixel;
+                        }
+                }
+        } else {
+                const int offset = img->bpp-1;
+                for (i = 0; i < img->height * img->width; i++) {
+                        u32 j;
+                        u8 *p = (u8 *)&pixel;
+                        pixel = 0;
+                        for (j = 0; j < img->bpp; j++) {
+                                fread(p+offset-j, 1, 1, fp);
+                                buffer[i] = pixel;
+                        }
+                }                
         }
         fclose(fp);
         return img;
+}
+
+struct image *image_loader_copy(struct image *img)
+{
+        struct image *nimg = malloc(sizeof(struct image));
+        memcpy(nimg, img, sizeof(struct image));
+        nimg->data = malloc(nimg->width * nimg->height * sizeof(nimg->cell_size));
+        if (!nimg->data) {
+                perror("error while copying image");
+                abort();
+        }
+        return nimg;
 }
 
 void image_loader_free(struct image *img)
@@ -126,3 +170,16 @@ void image_loader_free(struct image *img)
         free(img->data);
         free(img);
 }
+
+#define _UNIT_TEST_
+
+#ifdef _UNIT_TEST_
+
+int main()
+{
+        struct image *img = image_loader_create("../res/8_4_16_2_l_samp.raw");
+        image_loader_free(img);
+        return 0;
+}
+
+#endif//_UNIT_TEST_
