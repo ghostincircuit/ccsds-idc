@@ -2,27 +2,34 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
-static void dwt_all_rows(struct image *img, int rows, int cols, filter_t f)
+static void dwt_all_rows(struct image *img, int scale, filter_t f)
 {
         int i;
-        for (i = 0; i < rows; i++) {
-                (*f)(img->data + i*cols, cols);
+        unsigned char *dat = img->data;
+        int step = img->cell_size;
+        int cols = img->width;
+        int rows = img->height;
+        for (i = 0; i < rows/scale; i++) {
+                f(dat + i*cols*step, cols/scale);
         }
 }
 
-static void dwt_all_cols(struct image *img, int rows, int cols, filter_t f)
+static void dwt_all_cols(struct image *img, int scale, filter_t f)
 {
         int i;
-        u32 *buf = malloc(rows*sizeof(img->cell_size));
         u32 *dat = img->data;
+        int cols = img->width;
+        int rows = img->height;
+        u32 *buf = malloc(rows*sizeof(img->cell_size));
         assert(buf);
-        for (i = 0; i < cols; i++) {
+        for (i = 0; i < cols/scale; i++) {
                 int j;
-                for (j = 0; j < rows; j++)
+                for (j = 0; j < rows/scale; j++)
                         buf[j] = dat[i + j*cols];
-                (*f)(buf, rows);
-                for (j = 0; j < rows; j++)
+                f(buf, rows/scale);
+                for (j = 0; j < rows/scale; j++)
                         dat[i + j*cols] = buf[j];
         }
         free(buf);
@@ -30,20 +37,18 @@ static void dwt_all_cols(struct image *img, int rows, int cols, filter_t f)
 
 void dwt_2d(struct image *img, enum dwt_order order, int scale, filter_t f)
 {
-        assert(scale == 1 || scale == 2 || scale == 4 || scale == 8);
-        assert( ( ((1<<scale)-1) & img->height ) == 0);
-        assert( ( ((1<<scale)-1) & img->width ) == 0);
+        assert(scale != 0);
+        assert( ( (scale-1) & img->height ) == 0);
+        assert( ( (scale-1) & img->width ) == 0);
         assert(f);
         assert(img);
-        int rows = img->height / scale;
-        int cols = img->width / scale;
 
         if (order == ROW_FIRST) {
-                dwt_all_rows(img, rows, cols, f);
-                dwt_all_cols(img, rows, cols, f);
+                dwt_all_rows(img, scale, f);
+                dwt_all_cols(img, scale, f);
         } else {
-                dwt_all_rows(img, rows, cols, f);
-                dwt_all_cols(img, rows, cols, f);
+                dwt_all_cols(img, scale, f);
+                dwt_all_rows(img, scale, f);
         }
 }
 
@@ -489,16 +494,17 @@ void idwt_97ff(void *data, int len)
 int main()
 {
         const int N = 32;
-        s32 a[N];
+        const int N2 = 2028;
+        s32 a[N2];
         float ff[N];
         int f[N];
         int i;
-        for (i = 0; i < N; i++)
-                a[i] = i;
-        dwt_53i(a, N);
-        idwt_53i(a, N);
-        for (i = 0; i < N; i++)
-                assert(a[i] == i);
+        for (i = 0; i < N2; i++)
+                a[i] = i*i;
+        dwt_53i(a, N2);
+        idwt_53i(a, N2);
+        for (i = 0; i < N2; i++)
+                assert(a[i] == i*i);
 
         for (i = 0; i < N; i++)
                 a[i] = i;
@@ -518,13 +524,39 @@ int main()
         dwt_97f(f, N);
         idwt_97f(f, N);
 
-        struct image *img = image_loader_create(
-                "../res/1920_1080_8_1_l_rei_smile.raw");
-        
-        dwt_2d(img, ROW_FIRST, 1, dwt_53i);
+        const char rei[] = "../res/1024_768_8_1_l_rei_with_penpen.raw";
+        struct image *org = image_loader_create(rei);
+        struct image *img = image_loader_copy(org);
 
-        dwt_2d(img, COL_FIRST, 1, idwt_53i);
+        //transform
+        //dwt_2d(img, ROW_FIRST, 1, dwt_53i);
+        dwt_2d(img, ROW_FIRST, 2, dwt_53i);
+        //dwt_2d(img, ROW_FIRST, 4, dwt_53i);
+
+        //save tranformed image
+        img->bpp = 2;
+        image_loader_save(img, "trans.raw", "./");
         image_loader_free(img);
+/*
+        image_loader_log(org);
+        printf("========================================================\n");
+        dwt_2d(img, COL_FIRST, 1, idwt_53i);
+        image_loader_log(img);
+*/
+
+        //read back transformed image
+        img = image_loader_create("./1024_768_8_2_l_trans.raw");
+        
+        //invert tranformation
+        //dwt_2d(img, COL_FIRST, 4, idwt_53i);
+        dwt_2d(img, COL_FIRST, 2, idwt_53i);
+        //dwt_2d(img, COL_FIRST, 1, idwt_53i);
+        image_loader_assert_equal(org, img);
+
+        //save invert transformed
+        image_loader_save(img, "inv.raw", "./");
+        image_loader_free(img);
+        image_loader_free(org);
         return 0;
 }
 #endif//_UNIT_TEST_DWT_
