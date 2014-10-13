@@ -213,7 +213,7 @@ void image_loader_log(struct image *img)
         }
 }
 
-void image_loader_save(struct image *img, const char name[], const char path[])
+void image_loader_save(struct image *img, const char name[], const char path[], int check_ov)
 {
         const int N = 256;
         char file_name[N];
@@ -242,13 +242,15 @@ void image_loader_save(struct image *img, const char name[], const char path[])
                         u8 b = (u8)dat[i];
                         u32 prefix = dat[i] & 0xffffff80;
                         //if this assertion does not stand true, there's overflow
-                        assert(prefix == 0xffffff80 || prefix == 0);
+                        if (check_ov)
+                                assert(prefix == 0xffffff80 || prefix == 0);
                         ret = fwrite(&b, 1, 1, fp);
                 } else if (bpp == 2) {
                         u16 h = (u16)dat[i];
                         u32 prefix = dat[i] & 0xffff8000;
                         //if this assertion does not stand true, there's overflow
-                        assert(prefix == 0xffff8000 || prefix == 0);
+                        if (check_ov)
+                                assert(prefix == 0xffff8000 || prefix == 0);
                         ret = fwrite(&h, 1, 2, fp);
                 } else {
                         u32 x = (u32)dat[i];

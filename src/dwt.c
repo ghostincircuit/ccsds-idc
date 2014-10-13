@@ -524,19 +524,18 @@ int main()
         dwt_97f(f, N);
         idwt_97f(f, N);
 
-        const char rei[] = "../res/1024_768_8_1_l_rei_with_penpen.raw";
+        //const char rei[] = "../res/1024_768_8_1_l_rei_with_penpen.raw";
+        const char rei[] = "../res/800_600_8_1_l_asuka_beach.raw";
         struct image *org = image_loader_create(rei);
         struct image *img = image_loader_copy(org);
 
         //transform
-        //dwt_2d(img, ROW_FIRST, 1, dwt_53i);
+        dwt_2d(img, ROW_FIRST, 1, dwt_53i);
         dwt_2d(img, ROW_FIRST, 2, dwt_53i);
-        //dwt_2d(img, ROW_FIRST, 4, dwt_53i);
+        dwt_2d(img, ROW_FIRST, 4, dwt_53i);
 
         //save tranformed image
-        img->bpp = 2;
-        image_loader_save(img, "trans.raw", "./");
-        image_loader_free(img);
+        image_loader_save(img, "trans.raw", "./", 0);
 /*
         image_loader_log(org);
         printf("========================================================\n");
@@ -544,17 +543,18 @@ int main()
         image_loader_log(img);
 */
 
-        //read back transformed image
-        img = image_loader_create("./1024_768_8_2_l_trans.raw");
-        
         //invert tranformation
-        //dwt_2d(img, COL_FIRST, 4, idwt_53i);
+        dwt_2d(img, COL_FIRST, 4, idwt_53i);
         dwt_2d(img, COL_FIRST, 2, idwt_53i);
-        //dwt_2d(img, COL_FIRST, 1, idwt_53i);
+        dwt_2d(img, COL_FIRST, 1, idwt_53i);
         image_loader_assert_equal(org, img);
 
         //save invert transformed
-        image_loader_save(img, "inv.raw", "./");
+        s32 *dat = img->data;
+        for (i = 0; i < img->height * img->width; i++)
+                if (dat[i] < 0)
+                        dat[i] = -dat[i];
+        image_loader_save(img, "inv.raw", "./", 0);
         image_loader_free(img);
         image_loader_free(org);
         return 0;

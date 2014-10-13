@@ -16,7 +16,7 @@ struct image {
 //for example:1024_768_8_denglx
 struct image *image_loader_create(const char file[]);
 struct image *image_loader_copy(struct image *img);
-void image_loader_save(struct image *img, const char name[], const char path[]);
+void image_loader_save(struct image *img, const char name[], const char path[], int check_overflow);
 void image_loader_free(struct image *img);
 void image_loader_log(struct image*img);
 void image_loader_assert_equal(struct image *img1, struct image *img2);
