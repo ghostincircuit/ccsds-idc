@@ -51,7 +51,7 @@ void idct(double dv[], int n)
         memcpy(dv, ret, sizeof(double)*n);
 }
 
-#define _TEST_DCT_
+//#define _TEST_DCT_
 #ifdef _TEST_DCT_
 #include <stdio.h>
 int main()

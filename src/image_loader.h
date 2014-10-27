@@ -20,3 +20,9 @@ void image_loader_save(struct image *img, const char name[], const char path[], 
 void image_loader_free(struct image *img);
 void image_loader_log(struct image*img);
 void image_loader_assert_equal(struct image *img1, struct image *img2);
+
+static inline u32 image_getij_u32(const struct image *img, u32 i, u32 j)
+{
+        u32 *data = (u32 *)img->data;
+        return data[img->width * i + j];
+}

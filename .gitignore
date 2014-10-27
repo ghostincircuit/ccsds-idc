@@ -1,4 +1,6 @@
 *~
+cscope*
+build
 *.raw
 a.out
 *.exe
