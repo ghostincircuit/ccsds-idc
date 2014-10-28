@@ -84,7 +84,7 @@ u32 bitset_size(struct bitset *bs)
         return bs->size;
 }
 
-void bitset_clean(struct bitset *bs)
+void bitset_delete(struct bitset *bs)
 {
         free(bs->d);
         free(bs);
