@@ -11,3 +11,5 @@ struct bpe_block {
 
 struct bpe_block *bpe_block_from_image(const struct image *img, u32 *ph, u32 *pw);
 void bpe_block_print(struct bpe_block *b);
+void bpe_block_init(struct bpe_block *b, struct bpe_block *p);
+void bpe_block_init_n(struct bpe_block *b, struct bpe_block *p, u32 n);

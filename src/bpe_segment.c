@@ -1,6 +1,7 @@
 #include "bpe_segment.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void bpe_encode_segment_find_width(
         u32 *dc_width,
@@ -177,13 +178,23 @@ int main()
         };
         struct bpe_block src[32];
         struct bitset *dst = bitset_new();
+        int i;
+        for (i = 0; i < 64; i++) {
+                src[0].data[i] = i;
+        }
+        bpe_block_init_n(src+1, src, 31);
+        for (i = 0; i < 64; i++) {
+                src[i].data[0] = 2 * i;
+        }
+        bpe_block_print(src+2);
+///*
         bpe_encode_segment(
                 &para,
                 dst,
                 src,
                 16,
                 1);
-                
+//*/
         return 0;
 }
 #endif//_TEST_BPE_SEGMENT_

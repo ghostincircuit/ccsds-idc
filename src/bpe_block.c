@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 static void bpe_copy_block_u32(u32 *dst, u32 di, u32 dj, u32 dw,
                                const u32 *src, u32 si, u32 sj, u32 sw,
@@ -93,6 +94,20 @@ void bpe_block_print(struct bpe_block *b)
                         printf("%+05d ", b->data[i*BPE_BLOCK_N + j]);
                 }
                 printf("\n");
+        }
+}
+
+void bpe_block_init(struct bpe_block *b, struct bpe_block *p)
+{
+        int i;
+        memcpy(b->data, p->data, sizeof(struct bpe_block));
+}
+
+void bpe_block_init_n(struct bpe_block *b, struct bpe_block *p, u32 n)
+{
+        u32 i;
+        for (i = 0; i < n; i++) {
+                bpe_block_init(b+i, p);
         }
 }
 
