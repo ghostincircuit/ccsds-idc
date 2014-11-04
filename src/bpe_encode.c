@@ -2,6 +2,27 @@
 #include <stdlib.h>
 #include <assert.h>
 
+static u32 bitwidth_2c(u32 x)
+{
+        u32 prev = !!(x & (1u<<31));
+        u32 cur;
+        int i;
+        for (i = 30; i >= 0; i--) {
+                cur = !!((1<<i) & x);
+                if (cur != prev)
+                        break;
+        }
+        return i + 2;
+}
+
+static u32 bitwidth_2s(u32 x)
+{
+        s32 xx = *(s32 *)&x;
+        if (xx < 0)
+                xx = -x;
+        return bitwidth_2c(xx);
+}
+
 static void bpe_encode_segment_find_width(
         const struct bpe_parameters *para,
         const struct bpe_block *src,
@@ -9,6 +30,25 @@ static void bpe_encode_segment_find_width(
         u32 *dcwidth,
         u32 *acwidth)
 {
+        //find dcwidth
+        int i, j;
+        u32 width = 0;
+        for (i = 0; i < nblocks; i++) {
+                u32 t = bitwidth_2c(src[i].data[0]);
+                if (width < t)
+                        width = t;
+        }
+        *dcwidth = width;
+        
+        //find acwidth[i]
+        for (i = 0; i < nblocks; i++) {
+                acwidth[i] = 0;
+                for (j = 1; j < 64; j++) {
+                        u32 t = bitwidth_2s(src[i].data[j]);//sign already counted
+                        if (t < acwidth[i])
+                                acwidth[i] = t;
+                }
+        }
 }
 
 static void bpe_encode_segment_header(
@@ -172,8 +212,21 @@ void bpe_encode_blocks(const struct bpe_parameters *para,
 }
 
 #ifdef _TEST_BPE_ENCODE_
+#include <stdio.h>
+
+void test_bitwidth()
+{
+        printf("=========== complement ==========================\n");
+        for (ii = -4; ii <= 4; ii++)
+                printf("%d:%d\n", ii, bitwidth_2c(ii));
+        printf("=========== sign ==========================\n");
+        for (ii = -4; ii <= 4; ii++)
+                printf("%d:%d\n", ii, bitwidth_2s(ii));
+}
+
 int main()
 {
+        int ii;
         struct bpe_parameters para = {
                 .SegmentByteLimit = 1024,
                 .DCStop = 1,
@@ -197,14 +250,14 @@ int main()
                 src[i].data[0] = 2 * i;
         }
         bpe_block_print(src+2);
-///*
+/*
         bpe_encode_segment(
                 &para,
                 dst,
                 src,
                 16,
                 1);
-//*/
+*/
         return 0;
 }
 #endif
