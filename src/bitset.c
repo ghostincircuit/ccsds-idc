@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 static const u32 cell_width_bits = sizeof(u32) * 8;
 
@@ -58,10 +59,21 @@ struct bitset *bitset_con(struct bitset *l, struct bitset *r)
         return l;
 }
 
+struct bitset *bitset_con_with_limit(struct bitset *l, struct bitset *r, u32 lim)
+{
+        assert(l);
+        assert(r);
+        assert(l->size <= lim);
+        u32 avail = lim - l->size;
+        u32 rsz = r->size;
+        u32 todo = rsz < avail ? rsz : avail;
+        bitset_push_bits(l, r->d, todo);
+        return l;
+}
+
 struct bitset *bitset_copy(struct bitset *src)
 {
         u32 n = src->size;
-        u32 *d = src->d;
         u32 copy_size = (n + cell_width_bits-1)/cell_width_bits*(cell_width_bits/8);
         struct bitset *dst = malloc(sizeof(struct bitset));
         dst->size = n;
@@ -72,11 +84,10 @@ struct bitset *bitset_copy(struct bitset *src)
 
 u8 *bitset_dump(u8 dst[], struct bitset *src, u32 n)
 {
-        int i;
-        u32 bytes = (src->size + 7) / 8;
         n = (n + 7) / 8;
         n = src->size > n ? n : src->size;
         memcpy(dst, src->d, n);
+        return dst;
 }
 
 u32 bitset_size(struct bitset *bs)
@@ -105,6 +116,24 @@ void bitset_seti(struct bitset *bs, u32 idx, u32 bit)
         u32 byte = idx / cell_width_bits;
         u32 offset = idx % cell_width_bits;
         bs->d[byte] = bs->d[byte] | (bit<<offset);
+}
+
+void bitset_print(struct bitset *bs, u32 start, u32 len, u32 sep)
+{
+        int i;
+        int cnt = 0;
+        for (i = 0; i < len; i++) {
+                if (start + i >= bs->size)
+                        break;
+                u32 bit = bitset_geti(bs, start + i);
+                printf("%d", bit);
+                cnt++;
+                if (cnt == sep) {
+                        cnt = 0;
+                        printf(" ");
+                }
+        }
+        printf("\n");
 }
 
 //#define _TEST_BITSET_

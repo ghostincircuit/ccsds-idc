@@ -99,7 +99,6 @@ void bpe_block_print(struct bpe_block *b)
 
 void bpe_block_init(struct bpe_block *b, struct bpe_block *p)
 {
-        int i;
         memcpy(b->data, p->data, sizeof(struct bpe_block));
 }
 
