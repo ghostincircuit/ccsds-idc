@@ -20,7 +20,7 @@ struct bpe_parameters {
         u32 ImageHeight;
 
         u32 BitShiftLL3;
-
+        u32 Other;
 };
 
 void bpe_encode_blocks(const struct bpe_parameters *para,

@@ -35,7 +35,7 @@ struct bitset *bitset_push_bit(struct bitset *bs, u32 bit)
         return bs;
 }
 
-struct bitset *bitset_push_bits(struct bitset *bs, u32 word[], u32 cnt)
+struct bitset *bitset_push_bits(struct bitset *bs, const u32 word[], u32 cnt)
 {
         int i;
         u32 byte, offset;
@@ -51,7 +51,7 @@ struct bitset *bitset_push_bits(struct bitset *bs, u32 word[], u32 cnt)
         return bs;
 }
 
-struct bitset *bitset_con(struct bitset *l, struct bitset *r)
+struct bitset *bitset_con(struct bitset *l, const struct bitset *r)
 {
         assert(l);
         assert(r);
@@ -59,7 +59,7 @@ struct bitset *bitset_con(struct bitset *l, struct bitset *r)
         return l;
 }
 
-struct bitset *bitset_con_with_limit(struct bitset *l, struct bitset *r, u32 lim)
+struct bitset *bitset_con_with_limit(struct bitset *l, const struct bitset *r, u32 lim)
 {
         assert(l);
         assert(r);
@@ -71,7 +71,7 @@ struct bitset *bitset_con_with_limit(struct bitset *l, struct bitset *r, u32 lim
         return l;
 }
 
-struct bitset *bitset_copy(struct bitset *src)
+struct bitset *bitset_copy(const struct bitset *src)
 {
         u32 n = src->size;
         u32 copy_size = (n + cell_width_bits-1)/cell_width_bits*(cell_width_bits/8);
@@ -82,7 +82,7 @@ struct bitset *bitset_copy(struct bitset *src)
         return dst;
 }
 
-u8 *bitset_dump(u8 dst[], struct bitset *src, u32 n)
+u8 *bitset_dump(u8 dst[], const struct bitset *src, u32 n)
 {
         n = (n + 7) / 8;
         n = src->size > n ? n : src->size;
